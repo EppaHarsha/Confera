@@ -1,42 +1,30 @@
 import React from "react";
-import "./Home.css";
+import Navbar from "./Navbar";
+
 function Home() {
   return (
     <>
-      <nav className=" navbar-home navbar navbar-expand-lg navbar-light bg- shadow-sm px-4">
-        <a className="navbar-brand fw-bold text-primary" href="#">
-          Confera
-        </a>
-        <button
-          className="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
-
-        <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
-          <ul className="navbar-nav">
-            <li className="nav-item">
-              <a className="nav-link active text-dark" href="#">
-                Home
-              </a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link text-dark" href="#">
-                Login
-              </a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link text-dark" href="#">
-                Logout
-              </a>
-            </li>
-          </ul>
+      <Navbar />
+      <div className="container mt-5 mb-4">
+        <div className="row">
+          <div className="col-6 mt-5 text-muted">
+            <div className="mt-5 mb-5" >
+              <h1 style={{lineHeight:"1.5",fontSize:"50px"}}> Where conversations come alive, even from afar.</h1>
+            </div>
+            <div className="mt-5">
+              <button className="btn btn-primary fs-4 home-btn">Get Started</button>
+            </div>
+          </div>
+          <div className="col-1"></div>
+          <div className="col-5 p-5">
+            <img
+              src="/images/Home.svg"
+              alt="Logo"
+              style={{ width: "95%", height: "100%" }}
+            />
+          </div>
         </div>
-      </nav>
-  
+      </div>
     </>
   );
 }
