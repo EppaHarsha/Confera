@@ -1,0 +1,16 @@
+body {
+  background-color: rgb(255, 253, 252);
+  font-family: 'Poppins', sans-serif;
+}
+
+.navbar {
+  border-bottom: 1px solid #d3bebe !important;
+  position: sticky !important;
+  /* top: 0;
+  z-index: 1000 !important; */
+}
+
+.nav-link:hover {
+  color: #ff8000 !important;
+  font-weight: 700 !important;
+}
