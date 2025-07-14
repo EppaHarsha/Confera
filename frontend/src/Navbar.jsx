@@ -1,11 +1,34 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "./Home.css";
-function navbar() {
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+function Navbar() {
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
+  const token = localStorage.getItem("token");
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userName = localStorage.getItem("userName");
+    console.log(userName);
+    setUserName(userName);
+    if (token) {
+      setIsLoggedIn(true);
+    }
+  }, [token]);
+  function logout() {
+    localStorage.clear();
+    localStorage.setItem("logoutToast", "true");
+    window.location.href = "/";
+  }
   return (
     <nav className=" navbar-home navbar navbar-expand-lg navbar-light bg- shadow-sm px-4">
-      <a className="navbar-brand fw-bold text-primary fs-4" href="/">
+      <Link
+        className="navbar-brand fw-bold text-primary fs-4"
+        to={!isLoggedIn ? "/" : "/home"}
+      >
         Confera
-      </a>
+      </Link>
       <button
         className="navbar-toggler"
         type="button"
@@ -20,25 +43,42 @@ function navbar() {
         id="navbarNav"
       >
         <ul className="navbar-nav">
-          <li className="nav-item">
-            <a className="nav-link active text-dark fs-5" href="#">
-              Home
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link text-dark fs-5" href="#">
-              Login
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link text-dark fs-5" href="#">
-              Logout
-            </a>
-          </li>
+          {!isLoggedIn ? (
+            <>
+              <li className="nav-item">
+                <Link className="nav-link active text-dark fs-5" to="/">
+                  Home
+                </Link>
+              </li>
+              <li className="nav-item">
+                <a className="nav-link text-dark fs-5" href="/login">
+                  Login
+                </a>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link text-dark fs-5" to="/signup">
+                  Signup
+                </Link>
+              </li>
+            </>
+          ) : (
+            <>
+              <li className="nav-item d-flex align-items-center">
+                <span className="nav text-primary fs-5">
+                  Hi, {userName}
+                </span>
+              </li>
+              <li className="nav-item">
+                <button className="btn fs-5 nav-link" onClick={logout}>
+                  Logout
+                </button>
+              </li>
+            </>
+          )}
         </ul>
       </div>
     </nav>
   );
 }
 
-export default navbar;
+export default Navbar;
