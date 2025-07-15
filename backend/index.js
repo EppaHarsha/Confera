@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
@@ -8,7 +9,6 @@ const { createSecretToken } = require("./secretToken.js");
 const User = require("./models/userModel");
 const app = express();
 const mongoose = require("mongoose");
-require("dotenv").config();
 app.use(express.json());
 app.use(
   cors({
@@ -29,7 +29,7 @@ app.post("/signup", async (req, res) => {
       error: true,
     });
   }
-//   const user = {};
+  //   const user = {};
   const existingUser = await User.findOne({ userEmail });
   try {
     if (existingUser) {
@@ -85,11 +85,11 @@ app.post("/login", async (req, res) => {
         withCredentials: true,
         httpOnly: false,
       });
-      console.log("userName",user.userName)
+      console.log("userName", user.userName);
       const userData = {
         userEmail: userEmail,
         token: token,
-        userName:user.userName
+        userName: user.userName,
       };
       res.status(201).json({
         message: "Welcome back",

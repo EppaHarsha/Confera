@@ -20,3 +20,122 @@ body {
 .home-btn:hover{
     transform: scale(1.05);
 }
+/* .card {
+  height: 280px;
+  background-color: #f8f9fc;
+  border: none;
+  border-radius: 15px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.card .card-title {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.card .card-text {
+  color: #5f6f81;
+}
+
+.card .btn-primary {
+  background-color: #0066ff;
+  border: none;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.card .btn-primary:hover {
+  background-color: #0049b5;
+  transform: scale(1.05);
+} */
+/* Hero Section */
+.top-hero h4 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.top-hero p {
+  font-size: 1.15rem;
+  color: #555;
+}
+
+.top-hero .btn-primary {
+  font-weight: 600;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.top-hero .btn-primary:hover {
+  background-color: #004085;
+  transform: translateY(-2px);
+}
+
+/* Cards */
+.card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.card-title {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.card-text {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+/* Buttons inside cards */
+.card .btn-primary {
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.card .btn-primary:hover {
+  background-color: #0062cc;
+  transform: scale(1.05);
+}
+
+/* Modals */
+.modal-content {
+  border-radius: 16px;
+  padding: 10px 20px;
+}
+
+.modal-title {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.modal-body label {
+  font-weight: 500;
+  color: #333;
+}
+
+.modal-body input {
+  border-radius: 8px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+}
+
+.modal-footer .btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
