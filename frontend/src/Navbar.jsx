@@ -25,7 +25,7 @@ function Navbar() {
     <nav className=" navbar-home navbar navbar-expand-lg navbar-light bg- shadow-sm px-4">
       <Link
         className="navbar-brand fw-bold text-primary fs-4"
-        to={!isLoggedIn ? "/" : "/home"}
+        to={!isLoggedIn ? "/" : "/home"} 
       >
         Confera
       </Link>

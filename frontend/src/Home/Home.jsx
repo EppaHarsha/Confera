@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import "./Home.css";
+import "../Home.css";
 
 function Home() {
   return (
     <>
       {/* Top Section */}
       <div className="container my-5 py-5">
-        <div className="row align-items-center mb-4" style={{ marginTop: "-60px" }}>
+        <div className="row align-items-center" style={{ marginTop: "-60px" }}>
           <div className="col-md-6 text-center text-md-start">
             <h4 className="fw display-6">Connect. Collaborate. Confera.</h4>
             <p className="text-muted fs-5 mt-1">
@@ -18,9 +18,9 @@ function Home() {
             </button>
           </div>
 
-          <div className="col-md-6 text-center mt-4 mt-md-0">
+          <div className="col-md-6 text-center mt-4 mt-md-0 home-img">
             <img
-              src="/images/team_communication.svg"
+              src="/images/homepage.svg "
               alt="Team Communication"
               className="img-fluid"
               style={{ maxHeight: "350px" }}
@@ -30,8 +30,8 @@ function Home() {
       </div>
 
       {/* Card Section */}
-      <div className="container mt-5">
-        <div className="row mt-4">
+      <div className="container">
+        <div className="row">
           {[
             {
               title: "Schedule  Meeting",
@@ -58,9 +58,12 @@ function Home() {
               button: "Record",
             },
           ].map((card, index) => (
-            <div className="col-sm-3 mb-4" key={index}>
-              <div className="card p-3 h-100" >
-                <div className="card-body d-flex flex-column justify-content-between" style={{height:"230px"}}>
+            <div className="col-sm-3" key={index}>
+              <div className="card p-3 h-100">
+                <div
+                  className="card-body d-flex flex-column justify-content-between"
+                  style={{ height: "230px" }}
+                >
                   <div className="pt-3">
                     <h4 className="card-title">{card.title}</h4>
                     <p className="card-text mt-4">{card.text}</p>
@@ -215,7 +218,24 @@ function Home() {
                     placeholder="Your Name"
                   />
                 </div>
+                <div className="mb-3">
+                  <label className="form-label">Meeting Title</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Project Discussion"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Room Password (optional)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g., 1234"
+                  />
+                </div>
               </div>
+
               <div className="modal-footer">
                 <button
                   type="button"
