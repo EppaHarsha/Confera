@@ -7,16 +7,22 @@ const authentication = require("./routes/authRoute.js");
 app.use(express.json());
 const port = 3000;
 const url = process.env.MONGO_URL;
-
-app.use(
-  cors({
-    origin: ["http://localhost:5173"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
+const http = require("http");
+const { Server } = require("socket.io");
+const server = http.createServer(app);
+const {handleSocket} = require('./controller/socketController.js');
+const io = new Server(server,{
+  cors:{
+    origin:"*",
+    methods:["GET","POST"],
+  },
+})
 
 app.use("/", authentication);
+
+io.on("connection",(socket)=>{
+    handleSocket(io,socket);
+})
 
 function db() {
   mongoose
@@ -28,7 +34,7 @@ function db() {
       console.log(err);
     });
 }
-app.listen(port, () => {
+server.listen(port, () => {
   console.log("server is running on port 3000 ");
   db();
 });
