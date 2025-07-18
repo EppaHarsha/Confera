@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import "../Home.css";
 
 function Home() {
+  const[userName,setUserName] = useState();
+  const[meetingId,setMeetingId] = useState();
+
   return (
     <>
       {/* Top Section */}

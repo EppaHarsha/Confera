@@ -10,11 +10,18 @@ const url = process.env.MONGO_URL;
 const http = require("http");
 const { Server } = require("socket.io");
 const server = http.createServer(app);
-const {handleSocket} = require('./controller/socketController.js');
+// const {handleSocket} = require('./controller/socketController.js');
+app.use(cors({
+  origin: "*",
+  methods:["GET","POST","PATCH","PUT","DELETE"],
+  credentials: true,
+}));
+
 const io = new Server(server,{
   cors:{
     origin:"*",
     methods:["GET","POST"],
+    credentials:true,
   },
 })
 
