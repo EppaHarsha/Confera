@@ -1,10 +1,36 @@
 import React, { useState } from "react";
 import "../Home.css";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
-  const[userName,setUserName] = useState();
-  const[meetingId,setMeetingId] = useState();
+  const [userName, setUserName] = useState("");
+  const [meetingId, setMeetingId] = useState("");
+  const navigate = useNavigate();
+  const handlePreviewJoin = (e) => {
+    e.preventDefault();
 
+    const modal = document.getElementById("joinModal");
+    const modalInstance = bootstrap.Modal.getInstance(modal);
+    if (modalInstance) {
+      modalInstance.hide();
+    }
+
+    console.log("Home", userName);
+    console.log("Home", meetingId);
+    if (userName && meetingId) {
+      // toast.success("Ready to join!");
+      // setTimeout(() => {
+      navigate("/preview", {
+        state: { userName: userName, meetingId: meetingId },
+      });
+      // }, 500);
+    } else if (userName === undefined && meetingId) {
+      toast.error("Missing Username");
+    } else {
+      toast.error("Missing meetingId");
+    }
+  };
   return (
     <>
       {/* Top Section */}
@@ -165,6 +191,8 @@ function Home() {
                     type="text"
                     className="form-control"
                     placeholder="Enter room ID"
+                    value={meetingId}
+                    onChange={(e) => setMeetingId(e.target.value)}
                   />
                 </div>
                 <div className="mb-3">
@@ -173,6 +201,8 @@ function Home() {
                     type="text"
                     className="form-control"
                     placeholder="Enter your name"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
                   />
                 </div>
               </div>
@@ -184,7 +214,7 @@ function Home() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button className="btn btn-primary" onClick={handlePreviewJoin}>
                   Join
                 </button>
               </div>

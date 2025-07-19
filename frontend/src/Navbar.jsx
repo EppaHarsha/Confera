@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./Home.css";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 function Navbar() {
   const navigate = useNavigate();
@@ -21,11 +21,16 @@ function Navbar() {
     localStorage.setItem("logoutToast", "true");
     window.location.href = "/";
   }
+  const hideNavabar = ['/preview','/joinMeet'];
+  const location=useLocation();
+  if(hideNavabar.includes(location.pathname)){
+    return null
+  }
   return (
     <nav className=" navbar-home navbar navbar-expand-lg navbar-light bg- shadow-sm px-4">
       <Link
         className="navbar-brand fw-bold text-primary fs-4"
-        to={!isLoggedIn ? "/" : "/home"} 
+        to={!isLoggedIn ? "/" : "/home"}
       >
         Confera
       </Link>
@@ -64,9 +69,7 @@ function Navbar() {
           ) : (
             <>
               <li className="nav-item d-flex align-items-center">
-                <span className="nav text-primary fs-5">
-                  Hi, {userName}
-                </span>
+                <span className="nav text-primary fs-5">Hi, {userName}</span>
               </li>
               <li className="nav-item">
                 <button className="btn fs-5 nav-link" onClick={logout}>

@@ -7,10 +7,13 @@ import LandingPage from "./Landingpg/LandingPage";
 import Login from "./Auth/Login";
 import Signup from "./Auth/Signup";
 import Home from "./Home/Home";
+import Preview from "./preview";
+import MeetingPage from "./MeetingPage";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+
 function App() {
   const [count, setCount] = useState(0);
-
   return (
     <>
       <Router>
@@ -20,6 +23,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/preview" element={<Preview/>}/>
+          <Route path="/joinMeet" element={<MeetingPage/>}/>
         </Routes>
         <ToastContainer
           position="bottom-right"
