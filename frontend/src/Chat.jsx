@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
+import SendIcon from '@mui/icons-material/Send';
+import './Chat.css';
+
 const socket = io("http://localhost:3000");
+
 function Chat({ userName, meetingId }) {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
 
   useEffect(() => {
     socket.emit("join-meeting", { meetingId });
-  });
+  }, [meetingId]);
 
   useEffect(() => {
     socket.on("server-msg", (msg) => {
@@ -21,32 +25,37 @@ function Chat({ userName, meetingId }) {
   const sentMsg = () => {
     if (message.trim() !== "") {
       socket.emit("client-msg", {
-        message: message,
-        userName: userName,
-        meetingId: meetingId,
+        message,
+        userName,
+        meetingId,
       });
       setMessage("");
     }
   };
 
   return (
-    <>
-      <h1>Chat</h1>
-      <div className="div">
-        {chat.map((msg) => {
-          return <p> <b>{msg.userName}</b> : {msg.message}</p>;
-        })}
+    <div className="chat-container">
+      <div className="chat-messages">
+        {chat.map((msg, i) => (
+          <p key={i}>
+            <strong>{msg.userName}</strong>: {msg.message}
+          </p>
+        ))}
       </div>
 
-     
-      <input
-        type="text"
-        placeholder="Enter message"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-      />
-      <button onClick={sentMsg}>send</button>
-    </>
+      <div className="chat-input">
+        <input
+          type="text"
+          placeholder="Enter message"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className="form-control"
+        />
+        <button className="btn btn-primary" onClick={sentMsg}>
+          <SendIcon />
+        </button>
+      </div>
+    </div>
   );
 }
 
