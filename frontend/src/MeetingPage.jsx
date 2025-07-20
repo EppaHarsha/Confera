@@ -1,39 +1,25 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { getMediaStream } from "./utils/stream";
-import Chat from './Chat'
+import Chat from "./Chat";
+import Video from "./Video";
 function MeetingPage() {
   const location = useLocation();
-  const { userName, meetingId } = location.state || {};
-  const localVideoRef = useRef(null);
-
-  useEffect(() => {
-    const stream = getMediaStream();
-    console.log("meeting page ", stream);
-    localVideoRef.current.srcObject = stream;
-    console.log("meetingPage", userName);
-  }, []);
+  const {
+    userName,
+    meetingId,
+    isMic = true,
+    isCam = true,
+  } = location.state || {};
   return (
     <>
       <div className="container">
         <div className="row">
           <div className="col-6">
-            <h1>Heelo</h1>
-            <h2>{userName}</h2>
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              style={{
-                height: "500px",
-                width: "500px",
-                borderRadius: "10px",
-              }}
-            ></video>
+            <Video />
           </div>
           <div className="col-6">
-              <Chat userName={userName} meetingId={meetingId}/>
+            <Chat userName={userName} meetingId={meetingId} />
           </div>
         </div>
       </div>

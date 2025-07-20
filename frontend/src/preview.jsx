@@ -31,7 +31,7 @@ function Preview() {
 
   const joinMeeting = (e) => {
     navigate("/joinMeet", {
-      state: { userName: userName, meetingId: meetingId },
+      state: { userName: userName, meetingId: meetingId,isMic:isMic,isCam:isCam},
     });
   };
   console.log("Preview", userName);

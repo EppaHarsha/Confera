@@ -38,7 +38,7 @@ function Chat({ userName, meetingId }) {
         })}
       </div>
 
-      <p>{userName}</p>
+     
       <input
         type="text"
         placeholder="Enter message"
