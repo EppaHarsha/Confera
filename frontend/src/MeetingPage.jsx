@@ -23,6 +23,7 @@ export default function MeetingPage() {
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [mySocketId, setMySocketId] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
+  const [participantOpen, setParticipantOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isHost, setIsHost] = useState(false);
@@ -43,7 +44,7 @@ export default function MeetingPage() {
 
     // 🟢 Listen when server sends "meeting-ended"
     socket.on("meeting-ended", () => {
-      toast.info("Meeting has been ended by Host!")
+      toast.info("Meeting has been ended by Host!");
       navigate("/home"); // redirect to home page or any other page
     });
 
@@ -155,7 +156,12 @@ export default function MeetingPage() {
   };
 
   const toggleChat = () => {
+    setParticipantOpen(false);
     setChatOpen((prev) => !prev);
+  };
+  const toggleParticipant = () => {
+    setChatOpen(false);
+    setParticipantOpen((prev) => !prev);
   };
   const endCall = () => {
     navigate("/home");
@@ -175,9 +181,15 @@ export default function MeetingPage() {
     <div className="video-wrapper">
       <h2 className="room-title">Room:{meetingId}</h2>
 
-      <div className={`main-content ${chatOpen ? "chat-open" : ""}`}>
+      <div
+        className={`main-content ${
+          chatOpen ? "chat-open" : participantOpen ? "participants-open" : ""
+        }`}
+      >
         <div
-          className={`remote-grid users-${peers.length + (chatOpen ? 1 : 0)}`}
+          className={`remote-grid users-${peers.length + 1} ${
+            chatOpen || participantOpen ? "centered" : ""
+          }`}
         >
           {peers.map(({ peerID, stream, username }) => (
             <Video key={peerID} stream={stream} username={username} />
@@ -222,8 +234,21 @@ export default function MeetingPage() {
             </div>
           </div>
         )}
+        {participantOpen && (
+          <div className="chat-box participants-box">
+            <p>Participants</p>
+            <div className="participants-names">
+              <div className="participant-name">{username} (You)</div>
+              {peers.map((p, idx) => (
+                <div key={idx} className="participant-name">
+                  {p.username}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      {!chatOpen && (
+      {!chatOpen && !participantOpen && (
         <div className="own-video-box">
           <Video
             key={mySocketId}
@@ -250,7 +275,7 @@ export default function MeetingPage() {
             alt: "toggle-audio",
           },
           {
-            onClick: () => {},
+            onClick: toggleParticipant,
             icon: <PeopleIcon />,
             alt: "participants",
           },
