@@ -19,7 +19,7 @@ function Login() {
     if (success) {
       localStorage.setItem("token", userData.token);
       localStorage.setItem("userEmail", userData.userEmail);
-      localStorage.setItem("userName", userData.userName);
+      localStorage.setItem("username", userData.username); 
       toast.success(response.data.message);
       navigate("/home");
     }

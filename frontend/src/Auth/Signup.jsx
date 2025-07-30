@@ -12,7 +12,7 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const response = await axios.post("http://localhost:3000/signup", {
-      userName: userName,
+      username: userName,
       userEmail: userEmail,
       userPassword: userPassword,
     });
@@ -22,7 +22,7 @@ function Signup() {
     console.log(userData);
     if (success) {
       toast.success(response.data.message);
-      localStorage.setItem("userName", userData.userName);
+      localStorage.setItem("username", userData.username);
       localStorage.setItem("token", userData.token);
       localStorage.setItem("userEmail", userData.userEmail);
       navigate("/home");

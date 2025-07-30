@@ -151,11 +151,14 @@ function Video({ onCam, onMic }) {
           style={{
             borderRadius: "12px",
             width: "400px",
+            position:"relative",
+            left:"630px",
+            bottom:"-350px"
           }}
         ></video>
       </div>
 
-      <div className="remote-videos">
+      <div className="remote-video">
         {peers.map(({ peer, peerId, userName }) => (
           <RemoteVideo key={peerId} peer={peer} userName={userName} />
         ))}

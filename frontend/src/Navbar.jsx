@@ -5,13 +5,13 @@ import { toast } from "react-toastify";
 function Navbar() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("");
+  const [username, setusername] = useState("");
   const token = localStorage.getItem("token");
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const userName = localStorage.getItem("userName");
-    console.log(userName);
-    setUserName(userName);
+    const username = localStorage.getItem("username");
+    console.log(username);
+    setusername(username);
     if (token) {
       setIsLoggedIn(true);
     }
@@ -21,10 +21,10 @@ function Navbar() {
     localStorage.setItem("logoutToast", "true");
     window.location.href = "/";
   }
-  const hideNavabar = ['/preview','/joinMeet'];
-  const location=useLocation();
-  if(hideNavabar.includes(location.pathname)){
-    return null
+  const hideNavabar = ["/preview", "/joinMeet"];
+  const location = useLocation();
+  if (hideNavabar.includes(location.pathname)) {
+    return null;
   }
   return (
     <nav className=" navbar-home navbar navbar-expand-lg navbar-light bg- shadow-sm px-4">
@@ -69,7 +69,7 @@ function Navbar() {
           ) : (
             <>
               <li className="nav-item d-flex align-items-center">
-                <span className="nav text-primary fs-5">Hi, {userName}</span>
+                <span className="nav text-primary fs-5">Hi, {username}</span>
               </li>
               <li className="nav-item">
                 <button className="btn fs-5 nav-link" onClick={logout}>

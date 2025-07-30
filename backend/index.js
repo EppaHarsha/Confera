@@ -4,6 +4,7 @@ const cors = require("cors");
 const app = express();
 const mongoose = require("mongoose");
 const authentication = require("./routes/authRoute.js");
+const userMeetings = require('./routes/userMeetingRoute.js');
 app.use(express.json());
 const port = 3000;
 const url = process.env.MONGO_URL;
@@ -24,11 +25,19 @@ const io = new Server(server,{
     credentials:true,
   },
 })
-
+let activeMeetings={};
 app.use("/", authentication);
+app.use("/",userMeetings);
+
+app.get("/api/meeting-exists/:meetingId", (req, res) => {
+  const { meetingId } = req.params;
+  const exists = !!activeMeetings[meetingId];
+  res.json({ exists });
+});
+
 
 io.on("connection",(socket)=>{
-    handleSocket(io,socket);
+    handleSocket(io,socket,activeMeetings);
 })
 
 function db() {

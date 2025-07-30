@@ -5,8 +5,9 @@ const { createSecretToken } = require('../secretToken.js')
 //Signup ----
 
 module.exports.signup = async (req, res) => {
-  const { userName, userEmail, userPassword } = req.body;
-  if (!userEmail || !userPassword || !userName) {
+  const { username, userEmail, userPassword } = req.body;
+  console.log( "My username",username)
+  if (!userEmail || !userPassword || !username) {
     return res.json({
       message: "Fill the details",
       success: false,
@@ -21,7 +22,7 @@ module.exports.signup = async (req, res) => {
     }
     const hashedpassword = await bcrypt.hash(userPassword, 12);
     const newUser = new User({
-      userName: userName,
+      username: username,
       userEmail: userEmail,
       userPassword: hashedpassword,
     });
@@ -34,7 +35,7 @@ module.exports.signup = async (req, res) => {
       httpOnly: false,
     });
     const userData = {
-      userName: userName,
+      username: username,
       userEmail: userEmail,
       userPassword: userPassword,
       token: token,
@@ -71,11 +72,11 @@ module.exports.login=async (req, res) => {
         withCredentials: true,
         httpOnly: false,
       });
-      console.log("userName", user.userName);
+      console.log("userName", user);
       const userData = {
         userEmail: userEmail,
         token: token,
-        userName: user.userName,
+        username: user.username,
       };
       res.status(201).json({
         message: "Welcome back",

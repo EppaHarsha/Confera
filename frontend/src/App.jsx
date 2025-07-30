@@ -10,7 +10,7 @@ import Home from "./Home/Home";
 import Preview from "./preview";
 import MeetingPage from "./MeetingPage";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
+import ScheduleMeeting from "./ScheduleMeeting";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -25,6 +25,8 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/preview" element={<Preview/>}/>
           <Route path="/joinMeet" element={<MeetingPage/>}/>
+          <Route path="/schedule-meeting" element={<ScheduleMeeting/>}/>
+
         </Routes>
         <ToastContainer
           position="bottom-right"

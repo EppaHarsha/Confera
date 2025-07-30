@@ -4,8 +4,8 @@ import { setMediaStream } from "./utils/stream.js";
 function Preview() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { userName, meetingId } = location?.state || {};
-
+  const { username, meetingId } = location?.state || {};
+  console.log(location);
   const localVideoRef = useRef(null);
   const myStreamRef = useRef(null);
   const [isCam, setIsCam] = useState(true);
@@ -31,10 +31,11 @@ function Preview() {
 
   const joinMeeting = (e) => {
     navigate("/joinMeet", {
-      state: { userName: userName, meetingId: meetingId,isMic:isMic,isCam:isCam},
+      state: { username: username, meetingId: meetingId,isMic:isMic,isCam:isCam},
     });
   };
-  console.log("Preview", userName);
+
+  console.log("Preview", username);
   const toggleMic = () => {
     const audioTrack = myStreamRef.current?.getAudioTracks()[0];
     if (audioTrack) {
@@ -64,7 +65,7 @@ function Preview() {
       <div className="container">
         <div className="row">
           <div className="col-4"></div>
-          <div className="col-3">
+          <div className="col-3 border-rounded-4">
             <video
               ref={localVideoRef}
               autoPlay

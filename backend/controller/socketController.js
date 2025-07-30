@@ -1,58 +1,76 @@
-let roomUsers = {};
-function handleSocket(io, socket) {
+const hostMap = {};
+
+function handleSocket(io, socket, activeMeetings) {
   console.log("User is connected!!", socket.id);
-  socket.on("join-room", ({ meetingId, userName }) => {
+
+  // Chat logic
+  socket.on("join-meeting", ({ meetingId }) => {
     socket.join(meetingId);
-    console.log(meetingId);
-    console.log("user joined");
-    socket.data.userName = userName;
-    socket.data.meetingId = meetingId;
-    if (!roomUsers[meetingId]) roomUsers[meetingId] = [];
-    roomUsers[meetingId].push(socket.id);
-    console.log(`${socket.id} joined the room ${meetingId}`);
+    console.log(`User ${socket.id} joined meeting ${meetingId} for chat.`);
+  });
 
-    const otherUsers = roomUsers[meetingId].filter((id) => id !== socket.id);
-    console.log(otherUsers);
+  socket.on("client-msg", ({ message, username, meetingId }) => {
+    const data = { username, message };
+    io.to(meetingId).emit("server-msg", data);
+  });
 
-    const usersData = otherUsers.map((id) => ({
-      userId: id,
-      userName: io.sockets.sockets.get(id)?.data?.userName || "User",
-    }));
+  // Video call logic
+  socket.on("join-room", ({ meetingId, username }) => {
+    activeMeetings[meetingId] = true;
+    socket.data.username = username;
+    socket.join(meetingId);
+    if (!hostMap[meetingId]) {
+      hostMap[meetingId] = socket.id;
+      socket.data.isHost = true;
+      console.log(`User ${socket.id} is HOST of ${meetingId}`);
 
-    socket.emit("all-users", usersData);
+      // 👇 Notify this user they are host
+      socket.emit("host-confirmation", { isHost: true });
+    } else {
+      socket.data.isHost = false;
+      console.log(`User ${socket.id} is PARTICIPANT of ${meetingId}`);
 
+      // 👇 Notify this user they are NOT host
+      socket.emit("host-confirmation", { isHost: false });
+    }
+
+    // Notify the joining user about existing users
+    const usersInRoom = Array.from(
+      io.sockets.adapter.rooms.get(meetingId) || []
+    )
+      .filter((id) => id !== socket.id)
+      .map((id) => ({
+        userId: id,
+        username: io.sockets.sockets.get(id)?.data?.username || "User",
+      }));
+    socket.emit("all-users", usersInRoom);
+
+    // Notify others that a new user joined
     socket.to(meetingId).emit("user-joined", {
       userId: socket.id,
-      userName,
+      username,
     });
 
+    // Forward signaling data to the intended peer
     socket.on("signal", ({ to, from, signal }) => {
       io.to(to).emit("signal", { from, signal });
     });
-    socket.on("disconnect", () => {
-      const meetingId = socket.data.meetingId; // ✅ retrieve safely
-      if (meetingId) {
-        socket.to(meetingId).emit("user-left", { userId: socket.id });
 
-        // ✅ Remove user from roomUsers list
-        roomUsers[meetingId] = roomUsers[meetingId]?.filter(
-          (id) => id !== socket.id
-        );
-        if (roomUsers[meetingId]?.length === 0) {
-          delete roomUsers[meetingId];
-        }
+    socket.on("end-meeting", () => {
+      const meetingId = [...socket.rooms][1]; // get the room name
+
+      if (hostMap[meetingId] === socket.id) {
+        console.log(`Host ${socket.id} ended meeting ${meetingId}`);
+        io.to(meetingId).emit("meeting-ended");
+        delete hostMap[meetingId]; // Clean up
       }
     });
-  });
 
-  //Chat socket
-  socket.on("join-meeting", ({ meetingId }) => {
-    socket.join(meetingId);
-    console.log("user joined meeting", socket.id);
-  });
-  socket.on("client-msg", ({ message, userName, meetingId }) => {
-    const data = { userName, message };
-    io.to(meetingId).emit("server-msg", data);
+    // When someone leaves
+    socket.on("disconnect", () => {
+      socket.to(meetingId).emit("user-left", { userId: socket.id });
+    });
   });
 }
+
 module.exports = { handleSocket };
