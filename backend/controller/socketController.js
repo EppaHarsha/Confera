@@ -24,13 +24,13 @@ function handleSocket(io, socket, activeMeetings) {
       socket.data.isHost = true;
       console.log(`User ${socket.id} is HOST of ${meetingId}`);
 
-      // 👇 Notify this user they are host
+      // Notify this user they are host
       socket.emit("host-confirmation", { isHost: true });
     } else {
       socket.data.isHost = false;
       console.log(`User ${socket.id} is PARTICIPANT of ${meetingId}`);
 
-      // 👇 Notify this user they are NOT host
+      // Notify this user they are NOT host
       socket.emit("host-confirmation", { isHost: false });
     }
 
@@ -64,6 +64,11 @@ function handleSocket(io, socket, activeMeetings) {
         io.to(meetingId).emit("meeting-ended");
         delete hostMap[meetingId]; // Clean up
       }
+    });
+    socket.on("screen-share-started", ({ username, meetingId }) => {
+      socket.to(meetingId).emit("show-screen-share-popup", {
+        username,
+      });
     });
 
     // When someone leaves
