@@ -265,7 +265,7 @@ function Home() {
         </div>
       </div>
 
-      {/* Schedule Modal */}
+    
       <div
         className="modal fade"
         id="scheduleModal"
@@ -345,7 +345,7 @@ function Home() {
         </div>
       </div>
 
-      {/* Join Modal */}
+   
       <div
         className="modal fade"
         id="joinModal"
@@ -403,7 +403,6 @@ function Home() {
         </div>
       </div>
 
-      {/* Host Modal */}
       <div
         className="modal fade"
         id="hostModal"
@@ -457,7 +456,6 @@ function Home() {
         </div>
       </div>
 
-      {/* Record Modal */}
       <div
         className="modal fade"
         id="recordModal"

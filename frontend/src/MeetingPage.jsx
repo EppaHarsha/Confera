@@ -10,6 +10,9 @@ import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
 import PeopleIcon from "@mui/icons-material/People";
 import LogoutIcon from "@mui/icons-material/Logout";
+import ScreenShareIcon from "@mui/icons-material/ScreenShare";
+import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
+
 import SendIcon from "@mui/icons-material/Send";
 import { toast } from "react-toastify";
 const socket = io("http://localhost:3000");
@@ -24,6 +27,8 @@ export default function MeetingPage() {
   const [mySocketId, setMySocketId] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [participantOpen, setParticipantOpen] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isHost, setIsHost] = useState(false);
@@ -42,14 +47,14 @@ export default function MeetingPage() {
       console.log("Socket connected:", socket.id);
     });
 
-    // 🟢 Listen when server sends "meeting-ended"
+
     socket.on("meeting-ended", () => {
       toast.info("Meeting has been ended by Host!");
-      navigate("/home"); // redirect to home page or any other page
+      navigate("/home"); 
     });
 
     return () => {
-      socket.off("meeting-ended"); // ✅ cleanup listener
+      socket.off("meeting-ended"); 
       socket.disconnect();
     };
   }, []);
@@ -177,6 +182,79 @@ export default function MeetingPage() {
     }
   };
 
+  useEffect(() => {
+    socket.on("show-screen-share-popup", ({ username }) => {
+      toast.info(`${username} started screen sharing`, {
+        position: "top-center",
+      });
+    });
+  },[]);
+  const toggleScreenShare = async () => {
+    if (!isScreenSharing) {
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+        });
+        const screenTrack = screenStream.getVideoTracks()[0];
+
+        // Replace the video track for all peers
+        peersRef.current.forEach(({ peer }) => {
+          const sender = peer._pc
+            .getSenders()
+            .find((s) => s.track?.kind === "video");
+          if (sender) sender.replaceTrack(screenTrack);
+        });
+
+        // Show screen locally
+        if (userVideo.current) {
+          userVideo.current.srcObject = screenStream;
+        }
+        socket.emit("screen-share-started", {
+          username,
+          meetingId,
+        });
+
+        // When the user manually stops sharing screen
+        screenTrack.onended = () => {
+          stopScreenShare(); // Automatically restore camera
+        };
+
+        setIsScreenSharing(true);
+      } catch (err) {
+        console.error("Error sharing screen:", err);
+      }
+    } else {
+      stopScreenShare(); // If already sharing, stop and go back to camera
+    }
+  };
+
+  const stopScreenShare = async () => {
+    try {
+      const camStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
+
+      const camTrack = camStream.getVideoTracks()[0];
+
+      // Replace screen video with camera video for all peers
+      peersRef.current.forEach(({ peer }) => {
+        const sender = peer._pc
+          .getSenders()
+          .find((s) => s.track?.kind === "video");
+        if (sender) sender.replaceTrack(camTrack);
+      });
+
+      // Restore local user's video
+      if (userVideo.current) {
+        userVideo.current.srcObject = camStream;
+      }
+
+      setIsScreenSharing(false);
+    } catch (err) {
+      console.error("Error restoring camera after screen share:", err);
+    }
+  };
+
   return (
     <div className="video-wrapper">
       <h2 className="room-title">Room:{meetingId}</h2>
@@ -261,7 +339,7 @@ export default function MeetingPage() {
         </div>
       )}
 
-      {/* Controls container */}
+    
       <div className="controls-row">
         {[
           {
@@ -274,6 +352,16 @@ export default function MeetingPage() {
             icon: audioEnabled ? <MicIcon /> : <MicOffIcon />,
             alt: "toggle-audio",
           },
+          {
+            onClick: toggleScreenShare,
+            icon: isScreenSharing ? (
+              <StopScreenShareIcon />
+            ) : (
+              <ScreenShareIcon />
+            ),
+            alt: "toggle-screen-share",
+          },
+
           {
             onClick: toggleParticipant,
             icon: <PeopleIcon />,
