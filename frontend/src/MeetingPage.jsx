@@ -12,14 +12,14 @@ import PeopleIcon from "@mui/icons-material/People";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
 import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
-
+import { backendUrl } from "./utils/config";
 import SendIcon from "@mui/icons-material/Send";
 import { toast } from "react-toastify";
-const socket = io("http://localhost:3000");
+const socket = io(backendUrl);
 
 export default function MeetingPage() {
   const { state } = useLocation();
-  const { username, meetingId, isMic, isCam } = state;
+  const { username, meetingId, isMic = true, isCam = true } = state;
   const navigate = useNavigate();
   const [peers, setPeers] = useState([]);
   const [videoEnabled, setVideoEnabled] = useState(true);
@@ -47,14 +47,13 @@ export default function MeetingPage() {
       console.log("Socket connected:", socket.id);
     });
 
-
     socket.on("meeting-ended", () => {
       toast.info("Meeting has been ended by Host!");
-      navigate("/home"); 
+      navigate("/home");
     });
 
     return () => {
-      socket.off("meeting-ended"); 
+      socket.off("meeting-ended");
       socket.disconnect();
     };
   }, []);
@@ -73,6 +72,12 @@ export default function MeetingPage() {
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
+        const videoTrack = stream.getVideoTracks()[0];
+        const audioTrack = stream.getAudioTracks()[0];
+
+        setVideoEnabled(isCam); // set state based on preview
+        setAudioEnabled(isMic);
+
         userVideo.current.srcObject = stream;
         streamRef.current = stream;
 
@@ -144,11 +149,48 @@ export default function MeetingPage() {
     return peer;
   };
 
-  const toggleVideo = () => {
+  const toggleVideo = async () => {
     const videoTrack = streamRef.current?.getVideoTracks()[0];
-    if (videoTrack) {
-      videoTrack.enabled = !videoTrack.enabled;
-      setVideoEnabled(videoTrack.enabled);
+
+    if (videoTrack && videoTrack.enabled) {
+      // 🔴 Turn off camera
+      videoTrack.enabled = false;
+      setVideoEnabled(false);
+    } else {
+      try {
+        // ✅ Turn on camera with new video stream
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        const newVideoTrack = newStream.getVideoTracks()[0];
+
+        // Replace track in local stream
+        const oldStream = streamRef.current;
+        oldStream.removeTrack(videoTrack);
+        oldStream.addTrack(newVideoTrack);
+        setVideoEnabled(true);
+
+        // Replace track in PeerJS connections
+        peersRef.current.forEach(({ peer }) => {
+          const sender = peer._pc
+            .getSenders()
+            .find((s) => s.track?.kind === "video");
+          if (sender) sender.replaceTrack(newVideoTrack);
+        });
+
+        // Replace in local preview
+        const localVideo = userVideo.current;
+        if (localVideo) {
+          const updatedStream = new MediaStream([
+            ...oldStream.getAudioTracks(),
+            newVideoTrack,
+          ]);
+          localVideo.srcObject = updatedStream;
+          streamRef.current = updatedStream;
+        }
+      } catch (err) {
+        console.error("Error turning on video:", err);
+      }
     }
   };
 
@@ -188,7 +230,7 @@ export default function MeetingPage() {
         position: "top-center",
       });
     });
-  },[]);
+  }, []);
   const toggleScreenShare = async () => {
     if (!isScreenSharing) {
       try {
@@ -339,7 +381,6 @@ export default function MeetingPage() {
         </div>
       )}
 
-    
       <div className="controls-row">
         {[
           {
@@ -406,23 +447,34 @@ function Video({
   videoEnabled = true,
 }) {
   const ref = useRef();
+
   useEffect(() => {
     const videoElement = isSelf ? userVideoRef?.current : ref.current;
+
     if (videoElement && stream) {
       videoElement.srcObject = stream;
     }
-  }, [stream]);
+
+    if (isSelf && !videoEnabled && videoElement) {
+      // If video is disabled, stop all video tracks to show fallback UI
+      const tracks = videoElement.srcObject?.getVideoTracks();
+      if (tracks) tracks.forEach((track) => (track.enabled = false));
+    }
+  }, [stream, videoEnabled]);
 
   return (
     <div className="video-box">
       {isSelf && !videoEnabled ? (
-        <div className="video-disabled">Video Disabled</div>
+        <div className="video-disabled">{username}</div>
       ) : (
         <video
           playsInline
           autoPlay
           muted={isSelf}
           ref={isSelf ? userVideoRef : ref}
+          style={{
+            display: videoEnabled || !isSelf ? "block" : "none",
+          }}
         />
       )}
       <h4 className="username">{username}</h4>

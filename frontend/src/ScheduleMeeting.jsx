@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import { backendUrl } from "./utils/config";
 const ScheduleMeeting = () => {
   const [meetings, setMeetings] = useState([]);
   const navigate = useNavigate();
@@ -11,7 +11,7 @@ const ScheduleMeeting = () => {
   const fetchMeetings = () => {
     if (username) {
       axios
-        .get(`http://localhost:3000/user/${username}`)
+        .get(`${backendUrl}/user/${username}`)
         .then((res) => {
           setMeetings(res.data);
         })
@@ -29,7 +29,7 @@ const ScheduleMeeting = () => {
   const handleStartMeeting = async (meetingId) => {
     try {
       const res = await axios.get(
-        `http://localhost:3000/scheduledMeetingStarted/${username}/${meetingId}`
+        `${backendUrl}/scheduledMeetingStarted/${username}/${meetingId}`
       );
       console.log(res.data.message); // "Meeting deleted successfully"
 

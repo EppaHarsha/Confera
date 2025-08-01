@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 import SendIcon from '@mui/icons-material/Send';
 import './Chat.css';
-
-const socket = io("http://localhost:3000");
+import { backendUrl } from "./utils/config";
+const socket = io(backendUrl);
 
 function Chat({ userName, meetingId }) {
   const [message, setMessage] = useState("");
