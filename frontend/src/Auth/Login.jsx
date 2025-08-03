@@ -43,7 +43,7 @@ function Login() {
             </h6>
           </div>
           <form onSubmit={handleSubmit}>
-            <div className="mt-4" >
+            <div className="mt-4">
               <label htmlFor="" className="form-label">
                 Email
               </label>
@@ -67,13 +67,8 @@ function Login() {
                 className="form-control"
               />
             </div>
-<<<<<<< HEAD
             <p className="mt-3 text-blue">
               If you don't have account go to{" "}
-=======
-            <p className="mt-3">
-              If you don't have an account go to{" "}
->>>>>>> 2d1fdd7 (final changes)
               <Link className="nav-link text-dark fs-5" to="/signup">
                 Signup
               </Link>
@@ -84,7 +79,6 @@ function Login() {
           </form>
         </div>
 
-       
         <div className="col-12 col-md-6 mt-2 d-none d-md-block">
           <img src="/images/Login.svg" alt="Login" style={{ width: "90%" }} />
         </div>
