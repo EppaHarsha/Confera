@@ -67,7 +67,7 @@ function Login() {
                 className="form-control"
               />
             </div>
-            <p className="mt-3">
+            <p className="mt-3 color-blue">
               If you don't have account go to{" "}
               <Link className="nav-link text-dark fs-5" to="/signup">
                 Signup
