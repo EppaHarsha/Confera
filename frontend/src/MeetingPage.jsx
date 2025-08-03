@@ -1,23 +1,20 @@
-// This is a fixed and cleaned version of your MeetingPage.jsx and Video component
-// Focused on resolving remote stream rendering issues, peer overwrite bugs, and rendering consistency
-
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
-import { backendUrl } from "./utils/config";
-import VideocamIcon from "@mui/icons-material/Videocam";
-import VideocamOffIcon from "@mui/icons-material/VideocamOff";
+import Peer from "simple-peer";
+import "./Meeting.css";
 import MicIcon from "@mui/icons-material/Mic";
 import MicOffIcon from "@mui/icons-material/MicOff";
-import ScreenShareIcon from "@mui/icons-material/ScreenShare";
-import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
+import VideocamIcon from "@mui/icons-material/Videocam";
+import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
 import PeopleIcon from "@mui/icons-material/People";
 import LogoutIcon from "@mui/icons-material/Logout";
+import ScreenShareIcon from "@mui/icons-material/ScreenShare";
+import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
+import { backendUrl } from "./utils/config";
 import SendIcon from "@mui/icons-material/Send";
 import { toast } from "react-toastify";
-import "./Meeting.css";
-
 const socket = io(backendUrl);
 const iceServers = [
   { urls: "stun:stun.l.google.com:19302" },
@@ -33,8 +30,8 @@ export default function MeetingPage() {
   const { username, meetingId, isMic = true, isCam = true } = state;
   const navigate = useNavigate();
   const [peers, setPeers] = useState([]);
-  const [videoEnabled, setVideoEnabled] = useState(isCam);
-  const [audioEnabled, setAudioEnabled] = useState(isMic);
+  const [videoEnabled, setVideoEnabled] = useState(true);
+  const [audioEnabled, setAudioEnabled] = useState(true);
   const [mySocketId, setMySocketId] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [participantOpen, setParticipantOpen] = useState(false);
@@ -42,10 +39,32 @@ export default function MeetingPage() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isHost, setIsHost] = useState(false);
-
   const userVideo = useRef();
   const streamRef = useRef();
   const peerConnections = useRef({});
+
+  useEffect(() => {
+    socket.on("host-confirmation", ({ isHost }) => {
+      setIsHost(isHost);
+      console.log("Am I host?", isHost);
+    });
+  }, []);
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
+    });
+
+    socket.on("meeting-ended", () => {
+      toast.info("Meeting has been ended by Host!");
+      navigate("/home");
+    });
+
+    return () => {
+      socket.off("meeting-ended");
+      socket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -53,50 +72,50 @@ export default function MeetingPage() {
       socket.emit("join-meeting", { meetingId });
     });
 
-    socket.on("host-confirmation", ({ isHost }) => setIsHost(isHost));
-    socket.on("meeting-ended", () => {
-      toast.info("Meeting ended by Host.");
-      navigate("/home");
-    });
-    socket.on("server-msg", ({ username: sender, message }) => {
+    const handleServerMsg = ({ username: sender, message }) => {
       setMessages((prev) => [...prev, { sender, text: message }]);
-    });
+    };
+    socket.on("server-msg", handleServerMsg);
 
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         stream.getVideoTracks().forEach((track) => (track.enabled = isCam));
         stream.getAudioTracks().forEach((track) => (track.enabled = isMic));
+
         userVideo.current.srcObject = stream;
         streamRef.current = stream;
+
         socket.emit("join-room", { meetingId, username });
 
         socket.on("all-users", (users) => {
           users.forEach((user) => {
-            if (!peerConnections.current[user.userId]) {
-              const peer = createPeer(user.userId, stream);
-              peerConnections.current[user.userId] = peer;
-              setPeers((prev) => [
-                ...prev,
-                { peerId: user.userId, username: user.username, stream: null },
-              ]);
-            }
+            const peer = createPeer(user.userId, stream);
+            peerConnections.current[user.userId] = peer;
+            setPeers((prev) => [
+              ...prev,
+              {
+                peerId: user.userId,
+                username: user.username,
+                stream: null,
+                videoEnabled: user.videoEnabled ?? true,
+              },
+            ]);
           });
         });
 
         socket.on("user-joined", ({ userId, username: newUsername }) => {
-          if (!peerConnections.current[userId]) {
-            const peer = addPeer(userId, stream);
-            peerConnections.current[userId] = peer;
-            setPeers((prev) => {
-              const exists = prev.some((p) => p.peerId === userId);
-              if (exists) return prev;
-              return [
-                ...prev,
-                { peerId: userId, username: newUsername, stream: null },
-              ];
-            });
-          }
+          const peer = addPeer(userId, stream);
+          peerConnections.current[userId] = peer;
+          setPeers((prev) => [
+            ...prev,
+            {
+              peerId: userId,
+              username,
+              stream: null,
+              videoEnabled: videoEnabled ?? true,
+            },
+          ]);
         });
 
         socket.on("signal", async ({ from, signal }) => {
@@ -136,77 +155,93 @@ export default function MeetingPage() {
         });
       })
       .catch(() => {
-        toast.error("Camera/Microphone access denied");
+        toast.error("Media access denied. Please allow camera and mic.", {
+          position: "bottom-center",
+        });
         navigate("/");
       });
 
     return () => {
+      socket.off("server-msg", handleServerMsg);
       socket.disconnect();
     };
   }, []);
 
   const createPeer = (userId, stream) => {
     const peer = new RTCPeerConnection({ iceServers });
+
+    // Add tracks from local stream
     stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
-    peer.onicecandidate = (e) => {
-      if (e.candidate) {
+    peer.onicecandidate = (event) => {
+      if (event.candidate) {
         socket.emit("signal", {
           to: userId,
           from: socket.id,
-          signal: { candidate: e.candidate },
+          signal: { candidate: event.candidate },
         });
       }
     };
-    peer.ontrack = (e) => {
-      console.log("Received remote track for", userId);
+
+    peer.ontrack = (event) => {
+      console.log("Received remote track for", userId, event.streams);
       setPeers((prev) =>
         prev.map((p) =>
-          p.peerId === userId ? { ...p, stream: e.streams[0] } : p
+          p.peerId === userId ? { ...p, stream: event.streams[0] } : p
         )
       );
     };
 
-    peer.createOffer().then((offer) => {
-      peer.setLocalDescription(offer);
-      socket.emit("signal", {
-        to: userId,
-        from: socket.id,
-        signal: { sdp: offer },
+    peer
+      .createOffer()
+      .then((offer) => peer.setLocalDescription(offer))
+      .then(() => {
+        socket.emit("signal", {
+          to: userId,
+          from: socket.id,
+          signal: { sdp: peer.localDescription },
+        });
       });
-    });
+
     return peer;
   };
 
-  const addPeer = (fromId, stream) => {
+  function addPeer(fromId, stream) {
     const peer = new RTCPeerConnection({ iceServers });
     stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
-    peer.onicecandidate = (e) => {
-      if (e.candidate) {
+    peer.onicecandidate = (event) => {
+      if (event.candidate) {
         socket.emit("signal", {
           to: fromId,
           from: socket.id,
-          signal: { candidate: e.candidate },
+          signal: { candidate: event.candidate },
         });
       }
     };
-    peer.ontrack = (e) => {
-      console.log("Received remote track for", fromId);
+    peer.ontrack = (event) => {
       setPeers((prev) =>
         prev.map((p) =>
-          p.peerId === fromId ? { ...p, stream: e.streams[0] } : p
+          p.peerId === fromId && !p.stream
+            ? { ...p, stream: event.streams[0] }
+            : p
         )
       );
     };
     return peer;
-  };
+  }
 
   const toggleVideo = () => {
     const track = streamRef.current?.getVideoTracks()[0];
     if (track) {
       track.enabled = !track.enabled;
       setVideoEnabled(track.enabled);
+      socket.emit("video-toggled", {
+        meetingId,
+        userId: socket.id,
+        isVideoEnabled: track.enabled,
+      });
+      setVideoRefreshKey((k) => k + 1);
     }
   };
 
@@ -218,34 +253,222 @@ export default function MeetingPage() {
     }
   };
 
+  const toggleChat = () => {
+    setParticipantOpen(false);
+    setChatOpen((prev) => !prev);
+  };
+  const toggleParticipant = () => {
+    setChatOpen(false);
+    setParticipantOpen((prev) => !prev);
+  };
+  const endCall = () => {
+    navigate("/home");
+  };
+  const sendMessage = () => {
+    if (newMessage.trim()) {
+      socket.emit("client-msg", {
+        message: newMessage,
+        username,
+        meetingId,
+      });
+      setNewMessage("");
+    }
+  };
+
+  useEffect(() => {
+    socket.on("show-screen-share-popup", ({ username }) => {
+      toast.info(`${username} started screen sharing`, {
+        position: "top-center",
+      });
+    });
+  }, []);
+  const toggleScreenShare = async () => {
+    if (isScreenSharing) {
+      stopScreenShare();
+    } else {
+      handleScreenShare();
+    }
+  };
+
+  const handleScreenShare = async () => {
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+      });
+      const screenTrack = screenStream.getVideoTracks()[0];
+
+      Object.values(peerConnections.current).forEach((pc) => {
+        const sender = pc.getSenders().find((s) => s.track.kind === "video");
+        if (sender) sender.replaceTrack(screenTrack);
+      });
+
+      userVideo.current.srcObject = screenStream;
+      setIsScreenSharing(true);
+
+      socket.emit("show-screen-share-popup", { username });
+
+      screenTrack.onended = () => {
+        stopScreenShare();
+      };
+    } catch (err) {
+      console.error("Screen share error:", err);
+    }
+  };
+
+  const stopScreenShare = () => {
+    const webcamTrack = streamRef.current?.getVideoTracks()[0];
+    if (!webcamTrack) return;
+
+    Object.values(peerConnections.current).forEach((pc) => {
+      const sender = pc.getSenders().find((s) => s.track.kind === "video");
+      if (sender) sender.replaceTrack(webcamTrack);
+    });
+
+    userVideo.current.srcObject = streamRef.current;
+    setIsScreenSharing(false);
+  };
   return (
-    <div>
-      <h2>Room: {meetingId}</h2>
-      <div className="remote-grid">
-        {peers.map(({ peerId, stream, username }) => (
-          <Video key={peerId} stream={stream} username={username} />
-        ))}
-        <Video
-          key={mySocketId}
-          stream={streamRef.current}
-          username={`${username} (You)`}
-          isSelf={true}
-          userVideoRef={userVideo}
-          videoEnabled={videoEnabled}
-        />
+    <div className="video-wrapper">
+      <h2 className="room-title">Room:{meetingId}</h2>
+
+      <div
+        className={`main-content ${
+          chatOpen ? "chat-open" : participantOpen ? "participants-open" : ""
+        }`}
+      >
+        <div
+          className={`remote-grid users-${peers.length + 1} ${
+            chatOpen || participantOpen ? "centered" : ""
+          }`}
+        >
+          {peers.map(({ peerId, stream, username }) => (
+            <Video key={peerId} stream={stream} username={username} />
+          ))}
+
+          {chatOpen && (
+            <Video
+              key={mySocketId}
+              stream={streamRef.current}
+              username={`${username} (You)`}
+              isSelf={true}
+              userVideoRef={userVideo}
+              videoEnabled={videoEnabled}
+            />
+          )}
+        </div>
+        {chatOpen && (
+          <div className="chat-box">
+            <div className="chat-messages">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`chat-message ${
+                    msg.sender === username ? "my-message" : "other-message"
+                  }`}
+                >
+                  <i className="">{msg.sender}:</i> {msg.text}
+                </div>
+              ))}
+            </div>
+            <div className="chat-input">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Type your message..."
+              />
+              <button onClick={sendMessage}>
+                <SendIcon />
+              </button>
+            </div>
+          </div>
+        )}
+        {participantOpen && (
+          <div className="chat-box participants-box">
+            <p>Participants</p>
+            <div className="participants-names">
+              <div className="participant-name">{username} (You)</div>
+              {peers.map((p, idx) => (
+                <div key={idx} className="participant-name">
+                  {p.username}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+      {!chatOpen && !participantOpen && (
+        <div className="own-video-box">
+          <Video
+            key={mySocketId}
+            stream={streamRef.current}
+            username={`${username} (You)`}
+            isSelf={true}
+            userVideoRef={userVideo}
+            videoEnabled={videoEnabled}
+          />
+        </div>
+      )}
+
       <div className="controls-row">
-        <button onClick={toggleVideo}>
-          {videoEnabled ? <VideocamIcon /> : <VideocamOffIcon />}
-        </button>
-        <button onClick={toggleAudio}>
-          {audioEnabled ? <MicIcon /> : <MicOffIcon />}
-        </button>
+        {[
+          {
+            onClick: toggleVideo,
+            icon: videoEnabled ? <VideocamIcon /> : <VideocamOffIcon />,
+            alt: "toggle-video",
+          },
+          {
+            onClick: toggleAudio,
+            icon: audioEnabled ? <MicIcon /> : <MicOffIcon />,
+            alt: "toggle-audio",
+          },
+          {
+            onClick: toggleScreenShare,
+            icon: isScreenSharing ? (
+              <StopScreenShareIcon />
+            ) : (
+              <ScreenShareIcon />
+            ),
+            alt: "toggle-screen-share",
+          },
+
+          {
+            onClick: toggleParticipant,
+            icon: <PeopleIcon />,
+            alt: "participants",
+          },
+          {
+            onClick: toggleChat,
+            icon: <ChatBubbleIcon />,
+            alt: "chat",
+          },
+          isHost
+            ? {
+                onClick: () => socket.emit("end-meeting"),
+                icon: <LogoutIcon />,
+                alt: "end-meeting (host)",
+              }
+            : {
+                onClick: endCall,
+                icon: <LogoutIcon />,
+                alt: "leave-call",
+              },
+        ].map(({ onClick, icon, alt }, i) => (
+          <button
+            key={i}
+            onClick={onClick}
+            className="control-btn"
+            type="button"
+            title={alt}
+          >
+            {icon}
+          </button>
+        ))}
       </div>
     </div>
   );
 }
-
 function Video({
   stream,
   username,
@@ -254,28 +477,37 @@ function Video({
   videoEnabled = true,
 }) {
   const ref = useRef();
+
   useEffect(() => {
     const videoElement = isSelf ? userVideoRef?.current : ref.current;
+
     if (videoElement && stream) {
       videoElement.srcObject = stream;
-      videoElement.onloadedmetadata = () => {
-        videoElement
-          .play()
-          .catch((err) => console.warn("Video play failed", err));
-      };
     }
-  }, [stream]);
+
+    if (isSelf && !videoEnabled && videoElement) {
+      // If video is disabled, stop all video tracks to show fallback UI
+      const tracks = videoElement.srcObject?.getVideoTracks();
+      if (tracks) tracks.forEach((track) => (track.enabled = false));
+    }
+  }, [stream, videoEnabled]);
 
   return (
     <div className="video-box">
-      <video
-        playsInline
-        autoPlay
-        muted={isSelf}
-        ref={isSelf ? userVideoRef : ref}
-        style={{ width: "100%", height: "100%", background: "black" }}
-      />
-      <h4>{username}</h4>
+      {isSelf && !videoEnabled ? (
+        <div className="video-disabled">{username}</div>
+      ) : (
+        <video
+          playsInline
+          autoPlay
+          muted={isSelf}
+          ref={isSelf ? userVideoRef : ref}
+          style={{
+            display: videoEnabled || !isSelf ? "block" : "none",
+          }}
+        />
+      )}
+      <h4 className="username">{username}</h4>
     </div>
   );
 }
