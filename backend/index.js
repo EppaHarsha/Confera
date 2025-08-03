@@ -14,7 +14,7 @@ const server = http.createServer(app);
 const { handleSocket } = require("./controller/socketController.js");
 app.use(
   cors({
-    origin: "*",
+    origin: "https://confera-seven.vercel.app",
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     credentials: true,
   })
@@ -22,7 +22,7 @@ app.use(
 
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "https://confera-seven.vercel.app",
     methods: ["GET", "POST"],
     credentials: true,
   },
