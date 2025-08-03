@@ -1,5 +1,4 @@
-// This is a fixed and cleaned version of your MeetingPage.jsx and Video component
-// Focused on resolving remote stream rendering issues, peer overwrite bugs, and rendering consistency
+// Fixed version of MeetingPage.jsx including Video component with black screen issue resolved
 
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -19,14 +18,7 @@ import { toast } from "react-toastify";
 import "./Meeting.css";
 
 const socket = io(backendUrl);
-const iceServers = [
-  { urls: "stun:stun.l.google.com:19302" },
-  {
-    urls: "turn:openrelay.metered.ca:80",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-];
+const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
 
 export default function MeetingPage() {
   const { state } = useLocation();
@@ -36,12 +28,6 @@ export default function MeetingPage() {
   const [videoEnabled, setVideoEnabled] = useState(isCam);
   const [audioEnabled, setAudioEnabled] = useState(isMic);
   const [mySocketId, setMySocketId] = useState("");
-  const [chatOpen, setChatOpen] = useState(false);
-  const [participantOpen, setParticipantOpen] = useState(false);
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [isHost, setIsHost] = useState(false);
 
   const userVideo = useRef();
   const streamRef = useRef();
@@ -53,13 +39,17 @@ export default function MeetingPage() {
       socket.emit("join-meeting", { meetingId });
     });
 
-    socket.on("host-confirmation", ({ isHost }) => setIsHost(isHost));
+    socket.on("host-confirmation", ({ isHost }) => {
+      console.log("You are host:", isHost);
+    });
+
     socket.on("meeting-ended", () => {
-      toast.info("Meeting ended by Host.");
+      toast.info("Meeting ended by host");
       navigate("/home");
     });
+
     socket.on("server-msg", ({ username: sender, message }) => {
-      setMessages((prev) => [...prev, { sender, text: message }]);
+      console.log(`${sender}: ${message}`);
     });
 
     navigator.mediaDevices
@@ -69,6 +59,7 @@ export default function MeetingPage() {
         stream.getAudioTracks().forEach((track) => (track.enabled = isMic));
         userVideo.current.srcObject = stream;
         streamRef.current = stream;
+
         socket.emit("join-room", { meetingId, username });
 
         socket.on("all-users", (users) => {
@@ -159,7 +150,14 @@ export default function MeetingPage() {
       }
     };
     peer.ontrack = (e) => {
-      console.log("Received remote track for", userId);
+      console.log("✅ Received remote track for", userId, e.streams[0]);
+      const videoTrack = e.streams[0].getVideoTracks()[0];
+      console.log(
+        "🎥 Track state:",
+        videoTrack?.enabled,
+        videoTrack?.readyState
+      );
+
       setPeers((prev) =>
         prev.map((p) =>
           p.peerId === userId ? { ...p, stream: e.streams[0] } : p
@@ -175,6 +173,7 @@ export default function MeetingPage() {
         signal: { sdp: offer },
       });
     });
+
     return peer;
   };
 
@@ -192,7 +191,14 @@ export default function MeetingPage() {
       }
     };
     peer.ontrack = (e) => {
-      console.log("Received remote track for", fromId);
+      console.log("✅ Received remote track for", fromId, e.streams[0]);
+      const videoTrack = e.streams[0].getVideoTracks()[0];
+      console.log(
+        "🎥 Track state:",
+        videoTrack?.enabled,
+        videoTrack?.readyState
+      );
+
       setPeers((prev) =>
         prev.map((p) =>
           p.peerId === fromId ? { ...p, stream: e.streams[0] } : p
@@ -223,7 +229,11 @@ export default function MeetingPage() {
       <h2>Room: {meetingId}</h2>
       <div className="remote-grid">
         {peers.map(({ peerId, stream, username }) => (
-          <Video key={peerId} stream={stream} username={username} />
+          <Video
+            key={peerId + (stream ? "_1" : "_0")}
+            stream={stream}
+            username={username}
+          />
         ))}
         <Video
           key={mySocketId}
@@ -254,6 +264,7 @@ function Video({
   videoEnabled = true,
 }) {
   const ref = useRef();
+
   useEffect(() => {
     const videoElement = isSelf ? userVideoRef?.current : ref.current;
     if (videoElement && stream) {
@@ -267,13 +278,21 @@ function Video({
   }, [stream]);
 
   return (
-    <div className="video-box">
+    <div
+      className="video-box"
+      style={{ border: "2px solid lime", background: "#111" }}
+    >
       <video
         playsInline
         autoPlay
         muted={isSelf}
         ref={isSelf ? userVideoRef : ref}
-        style={{ width: "100%", height: "100%", background: "black" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "black",
+          display: "block",
+        }}
       />
       <h4>{username}</h4>
     </div>
