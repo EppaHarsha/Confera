@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { backendUrl } from "../utils/config";
 function Signup() {
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -11,7 +12,7 @@ function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const response = await axios.post("http://localhost:3000/signup", {
+    const response = await axios.post(`${backendUrl}/signup`, {
       username: userName,
       userEmail: userEmail,
       userPassword: userPassword,
@@ -27,9 +28,9 @@ function Signup() {
       localStorage.setItem("userEmail", userData.userEmail);
       navigate("/home");
     }
-  
+
     if (!success) {
-      toast.error(response.data.message,{position:"top-right"});
+      toast.error(response.data.message, { position: "top-right" });
     }
   };
 
