@@ -1,1 +1,1 @@
-export const backendUrl = "https://confera-rlby.onrender.com";
+export const backendUrl = "https://confera-vzpp.onrender.com";

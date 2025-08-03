@@ -15,8 +15,8 @@ const { handleSocket } = require("./controller/socketController.js");
 app.use(
   cors({
     origin: [
-      "https://confera-seven.vercel.app",
-      "https://confera-rlby.onrender.com",
+      "https://confera-two.vercel.app",
+      "https://confera-vzpp.onrender.com",
     ],
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     credentials: true,

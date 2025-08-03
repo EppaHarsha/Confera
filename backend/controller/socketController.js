@@ -17,6 +17,7 @@ function handleSocket(io, socket, activeMeetings) {
   // Video call logic
   socket.on("join-room", ({ meetingId, username }) => {
     activeMeetings[meetingId] = true;
+    console.log(activeMeetings);
     socket.data.username = username;
     socket.join(meetingId);
     if (!hostMap[meetingId]) {
