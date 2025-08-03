@@ -74,6 +74,10 @@ function handleSocket(io, socket, activeMeetings) {
     // When someone leaves
     socket.on("disconnect", () => {
       socket.to(meetingId).emit("user-left", { userId: socket.id });
+      // const room = io.sockets.adapter.rooms.get(meetingId);
+      // if (!room || room.size === 0) {
+      //   activeMeetings.delete(meetingId);
+      // }
     });
   });
 }

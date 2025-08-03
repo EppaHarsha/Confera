@@ -189,8 +189,7 @@
   border-radius: 12px;
   overflow: hidden;
   z-index: 999;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
-
+ 
 }
 
 /* Each video box */
@@ -226,6 +225,7 @@
 /* Username label */
 .username {
   color: white;
+ 
   margin: 5px 0;
 }
 
@@ -349,8 +349,8 @@
     bottom: 90px; /* Push up to avoid controls */
     right: 10px;
     z-index: 999;
-    max-width: 110px;
-    height:90px;
+    max-width: 150px;
+    height:150px;
   }
 
   .controls-row {

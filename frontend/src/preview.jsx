@@ -1,11 +1,11 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { setMediaStream } from "./utils/stream.js";
+
 function Preview() {
   const navigate = useNavigate();
   const location = useLocation();
   const { username, meetingId } = location?.state || {};
-  console.log(location);
   const localVideoRef = useRef(null);
   const myStreamRef = useRef(null);
   const [isCam, setIsCam] = useState(true);
@@ -13,29 +13,28 @@ function Preview() {
 
   useEffect(() => {
     const getVideo = async () => {
-    try {
+      try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: true,
         });
-         setMediaStream(stream);
+        setMediaStream(stream);
         localVideoRef.current.srcObject = stream;
         myStreamRef.current = stream;
         await localVideoRef.current.play();
-      }catch (error) {
-      console.log("error");
-    }
-  }
+      } catch (error) {
+        console.log("error");
+      }
+    };
     getVideo();
   }, []);
 
-  const joinMeeting = (e) => {
+  const joinMeeting = () => {
     navigate("/joinMeet", {
-      state: { username: username, meetingId: meetingId,isMic:isMic,isCam:isCam},
+      state: { username, meetingId, isMic, isCam },
     });
   };
 
-  console.log("Preview", username);
   const toggleMic = () => {
     const audioTrack = myStreamRef.current?.getAudioTracks()[0];
     if (audioTrack) {
@@ -57,31 +56,37 @@ function Preview() {
       style={{
         backgroundColor: "#ffffff",
         textAlign: "center",
+        padding: "20px",
+        minHeight: "100vh",
       }}
     >
-      <h3 className="mt-3 text-center" style={{ color: " #0062cc" }}>
+      <h3 className="mt-3 text-center" style={{ color: "#0062cc" }}>
         Ready to Join
       </h3>
-      <div className="container">
-        <div className="row">
-          <div className="col-4"></div>
-          <div className="col-3 border-rounded-4">
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              style={{
-                height: "500px",
-                width: "500px",
-                borderRadius: "10px",
-              }}
-            ></video>
+
+      <div className="container mt-4">
+        <div className="row justify-content-center">
+          <div className="col-12 col-sm-10 col-md-8 col-lg-6">
+            <div className="video-container">
+              <video
+                ref={localVideoRef}
+                autoPlay
+                muted
+                playsInline
+                style={{
+                  width: "100%",
+                  maxWidth: "500px",
+                  height: "auto",
+                  borderRadius: "10px",
+                  backgroundColor: "#000",
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <div style={{}}>
+      <div className="mt-4">
         <button
           onClick={toggleVideo}
           style={{
@@ -113,7 +118,7 @@ function Preview() {
         </button>
       </div>
 
-      <div style={{ marginTop: "20px" }}>
+      <div className="mt-4">
         <button
           onClick={joinMeeting}
           style={{

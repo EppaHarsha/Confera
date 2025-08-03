@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate,Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { backendUrl } from "../utils/config";
 function Login() {
@@ -32,23 +32,23 @@ function Login() {
   return (
     <div className="container">
       <div className="row mt-5">
-        <div className="col-4 mt-5">
+        <div className="col-12 col-md-6 mt-5">
           <h1 className="text-muted" style={{ fontSize: "50px" }}>
             Welcome back
           </h1>
           <div>
             <h2 className="text-muted mt-4">Ready to reconnect?</h2>
             <h6 className="text-muted mt-4">
-              Log in to access your meetings,messages and momens.
+              Log in to access your meetings, messages and moments.
             </h6>
           </div>
-          <form action="">
-            <div className="mt-4">
+          <form onSubmit={handleSubmit}>
+            <div className="mt-4" >
               <label htmlFor="" className="form-label">
                 Email
               </label>
               <input
-                type="text"
+                type="email"
                 placeholder="Enter your Email"
                 value={userEmail}
                 onChange={(e) => setUserEmail(e.target.value)}
@@ -67,22 +67,25 @@ function Login() {
                 className="form-control"
               />
             </div>
+<<<<<<< HEAD
             <p className="mt-3 text-blue">
               If you don't have account go to{" "}
+=======
+            <p className="mt-3">
+              If you don't have an account go to{" "}
+>>>>>>> 2d1fdd7 (final changes)
               <Link className="nav-link text-dark fs-5" to="/signup">
                 Signup
               </Link>
             </p>
-            <button
-              className="btn btn-primary fs-5 mt-1"
-              onClick={handleSubmit}
-            >
+            <button className="btn btn-primary fs-5 mt-1" type="submit">
               Login
             </button>
           </form>
         </div>
-        <div className="col-2"></div>
-        <div className="col-6 mt-2">
+
+       
+        <div className="col-12 col-md-6 mt-2 d-none d-md-block">
           <img src="/images/Login.svg" alt="Login" style={{ width: "90%" }} />
         </div>
       </div>

@@ -30,7 +30,7 @@ function Home() {
       const response = await axios.get(
         `http://localhost:3000/api/meeting-exists/${meetingId}`
       );
-
+      console.log(response);
       if (response.data.exists) {
         // Valid meeting, go to preview
         navigate("/preview", {
@@ -86,7 +86,7 @@ function Home() {
       // toast.success("Ready to join!");
       // setTimeout(() => {
       navigate("/preview", {
-        state: { username: username, meetingId: id},
+        state: { username: username, meetingId: id },
       });
       // }, 500);
     } else if (username === undefined && id) {
@@ -139,46 +139,46 @@ function Home() {
   // };
 
   const handleScheduleMeeting = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const modal = document.getElementById("scheduleModal");
-  const modalInstance = bootstrap.Modal.getInstance(modal);
-  if (modalInstance) modalInstance.hide();
+    const modal = document.getElementById("scheduleModal");
+    const modalInstance = bootstrap.Modal.getInstance(modal);
+    if (modalInstance) modalInstance.hide();
 
-  if (!username) {
-    toast.error("Please enter your name first.");
-    return;
-  }
+    if (!username) {
+      toast.error("Please enter your name first.");
+      return;
+    }
 
-  if (!scheduledTitle || !scheduledDate || !scheduledTime) {
-    toast.error("Please fill all schedule fields.");
-    return;
-  }
+    if (!scheduledTitle || !scheduledDate || !scheduledTime) {
+      toast.error("Please fill all schedule fields.");
+      return;
+    }
 
-  const id = uuidv4();
-  setusername(localStorage.getItem("username"));
-  // console.log(localStorage.getItem("username"));
-  console.log(username);
-  try {
-    await axios.post("http://localhost:3000/schedule", {
-      username:localStorage.getItem("username"),
-      meetingId: id,
-      title: scheduledTitle,
-      date: scheduledDate,
-      time: scheduledTime,
-    });
+    const id = uuidv4();
+    setusername(localStorage.getItem("username"));
+    // console.log(localStorage.getItem("username"));
+    console.log(username);
+    try {
+      await axios.post("http://localhost:3000/schedule", {
+        username: localStorage.getItem("username"),
+        meetingId: id,
+        title: scheduledTitle,
+        date: scheduledDate,
+        time: scheduledTime,
+      });
 
-    toast.success("Meeting scheduled!");
+      toast.success("Meeting scheduled!");
 
-    // Go to schedule page with this meeting
-    navigate("/schedule-meeting", {
-      state: { username },
-    });
-  } catch (error) {
-    toast.error("Error scheduling meeting.");
-    console.error(error);
-  }
-};
+      // Go to schedule page with this meeting
+      navigate("/schedule-meeting", {
+        state: { username },
+      });
+    } catch (error) {
+      toast.error("Error scheduling meeting.");
+      console.error(error);
+    }
+  };
 
   return (
     <>
@@ -188,8 +188,8 @@ function Home() {
           <div className="col-md-6 text-center text-md-start">
             <h4 className="fw display-6">Connect. Collaborate. Confera.</h4>
             <p className="text-muted fs-5 mt-1">
-              Host meetings, join meetings, or collaborate instantly — all in one
-              place.
+              Host meetings, join meetings, or collaborate instantly — all in
+              one place.
             </p>
             <button className="btn btn-primary mt-4 px-4 py-2">
               Get Started
@@ -235,10 +235,10 @@ function Home() {
             },
 
             {
-              title:  "Scheduled Meetings",
+              title: "Scheduled Meetings",
               text: "This section lists all your upcoming meetings. You can start or review them here anytime.",
               target: "recordModal",
-              button:"View Scheduled Meetings"
+              button: "View Scheduled Meetings",
             },
           ].map((card, index) => (
             <div className="col-sm-3" key={index}>
@@ -265,7 +265,6 @@ function Home() {
         </div>
       </div>
 
-    
       <div
         className="modal fade"
         id="scheduleModal"
@@ -345,7 +344,6 @@ function Home() {
         </div>
       </div>
 
-   
       <div
         className="modal fade"
         id="joinModal"
@@ -465,7 +463,7 @@ function Home() {
       >
         <div className="modal-dialog">
           <div className="modal-content">
-            <form onSubmit={()=>navigate("/schedule-meeting")}>
+            <form onSubmit={() => navigate("/schedule-meeting")}>
               <div className="modal-header">
                 <h5 className="modal-title">Go to scheduled Meeting page</h5>
                 <button
@@ -474,7 +472,9 @@ function Home() {
                   data-bs-dismiss="modal"
                 ></button>
               </div>
-              <button className="btn btn-primary mt-2">scheduled meetings</button>
+              <button className="btn btn-primary mt-2">
+                scheduled meetings
+              </button>
             </form>
           </div>
         </div>

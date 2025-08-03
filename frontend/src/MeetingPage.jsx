@@ -16,6 +16,7 @@ import { backendUrl } from "./utils/config";
 import SendIcon from "@mui/icons-material/Send";
 import { toast } from "react-toastify";
 const socket = io(backendUrl);
+const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
 
 export default function MeetingPage() {
   const { state } = useLocation();
@@ -28,13 +29,13 @@ export default function MeetingPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [participantOpen, setParticipantOpen] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isHost, setIsHost] = useState(false);
   const userVideo = useRef();
   const streamRef = useRef();
-  const peersRef = useRef([]);
+  const peerConnections = useRef({});
+
   useEffect(() => {
     socket.on("host-confirmation", ({ isHost }) => {
       setIsHost(isHost);
@@ -72,11 +73,8 @@ export default function MeetingPage() {
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
-        const videoTrack = stream.getVideoTracks()[0];
-        const audioTrack = stream.getAudioTracks()[0];
-
-        setVideoEnabled(isCam); // set state based on preview
-        setAudioEnabled(isMic);
+        stream.getVideoTracks().forEach((track) => (track.enabled = isCam));
+        stream.getAudioTracks().forEach((track) => (track.enabled = isMic));
 
         userVideo.current.srcObject = stream;
         streamRef.current = stream;
@@ -84,43 +82,76 @@ export default function MeetingPage() {
         socket.emit("join-room", { meetingId, username });
 
         socket.on("all-users", (users) => {
-          users.forEach(({ userId, username: otherUsername }) => {
-            const peer = createPeer(userId, socket.id, stream);
-            const peerObj = { peerID: userId, peer, username: otherUsername };
-
-            peersRef.current.push(peerObj);
-
-            peer.on("stream", (remoteStream) => {
-              setPeers((prev) => [
-                ...prev,
-                { ...peerObj, stream: remoteStream },
-              ]);
-            });
+          users.forEach((user) => {
+            const peer = createPeer(user.userId, stream);
+            peerConnections.current[user.userId] = peer;
+            setPeers((prev) => [
+              ...prev,
+              {
+                peerId: user.userId,
+                username: user.username,
+                stream: null,
+                videoEnabled: user.videoEnabled ?? true,
+              },
+            ]);
           });
         });
 
         socket.on("user-joined", ({ userId, username: newUsername }) => {
           const peer = addPeer(userId, stream);
-          const peerObj = { peerID: userId, peer, username: newUsername };
-
-          peersRef.current.push(peerObj);
-
-          peer.on("stream", (remoteStream) => {
-            setPeers((prev) => [...prev, { ...peerObj, stream: remoteStream }]);
-          });
+          peerConnections.current[userId] = peer;
+          setPeers((prev) => [
+            ...prev,
+            {
+              peerId: userId,
+              username,
+              stream: null,
+              videoEnabled: videoEnabled ?? true,
+            },
+          ]);
         });
 
-        socket.on("signal", ({ from, signal }) => {
-          const item = peersRef.current.find((p) => p.peerID === from);
-          if (item) item.peer.signal(signal);
+        socket.on("signal", async ({ from, signal }) => {
+          const peer = peerConnections.current[from];
+          if (peer) {
+            try {
+              if (signal.sdp) {
+                await peer.setRemoteDescription(
+                  new RTCSessionDescription(signal.sdp)
+                );
+                if (signal.sdp.type === "offer") {
+                  const answer = await peer.createAnswer();
+                  await peer.setLocalDescription(answer);
+                  socket.emit("signal", {
+                    to: from,
+                    from: socket.id,
+                    signal: { sdp: peer.localDescription },
+                  });
+                }
+              } else if (signal.candidate) {
+                await peer.addIceCandidate(
+                  new RTCIceCandidate(signal.candidate)
+                );
+              }
+            } catch (err) {
+              console.error("Signal error:", err);
+            }
+          }
         });
 
         socket.on("user-left", ({ userId }) => {
-          peersRef.current = peersRef.current.filter(
-            (p) => p.peerID !== userId
-          );
-          setPeers((prev) => prev.filter((p) => p.peerID !== userId));
+          if (peerConnections.current[userId]) {
+            peerConnections.current[userId].close();
+            delete peerConnections.current[userId];
+          }
+          setPeers((prev) => prev.filter((p) => p.peerId !== userId));
         });
+      })
+      .catch(() => {
+        toast.error("Media access denied. Please allow camera and mic.", {
+          position: "bottom-center",
+        });
+        navigate("/");
       });
 
     return () => {
@@ -129,76 +160,88 @@ export default function MeetingPage() {
     };
   }, []);
 
-  const createPeer = (userToSignal, callerID, stream) => {
-    const peer = new Peer({ initiator: true, trickle: false, stream });
-    peer.on("signal", (signal) => {
-      socket.emit("signal", { to: userToSignal, from: callerID, signal });
-    });
-    return peer;
-  };
+  const createPeer = (userId, stream) => {
+    const peer = new RTCPeerConnection({ iceServers });
 
-  const addPeer = (incomingSignalUserId, stream) => {
-    const peer = new Peer({ initiator: false, trickle: false, stream });
-    peer.on("signal", (signal) => {
-      socket.emit("signal", {
-        to: incomingSignalUserId,
-        from: socket.id,
-        signal,
-      });
-    });
-    return peer;
-  };
+    // Add tracks from local stream
+    stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
-  const toggleVideo = async () => {
-    const videoTrack = streamRef.current?.getVideoTracks()[0];
-
-    if (videoTrack && videoTrack.enabled) {
-      // 🔴 Turn off camera
-      videoTrack.enabled = false;
-      setVideoEnabled(false);
-    } else {
-      try {
-        // ✅ Turn on camera with new video stream
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+    peer.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("signal", {
+          to: userId,
+          from: socket.id,
+          signal: { candidate: event.candidate },
         });
-        const newVideoTrack = newStream.getVideoTracks()[0];
-
-        // Replace track in local stream
-        const oldStream = streamRef.current;
-        oldStream.removeTrack(videoTrack);
-        oldStream.addTrack(newVideoTrack);
-        setVideoEnabled(true);
-
-        // Replace track in PeerJS connections
-        peersRef.current.forEach(({ peer }) => {
-          const sender = peer._pc
-            .getSenders()
-            .find((s) => s.track?.kind === "video");
-          if (sender) sender.replaceTrack(newVideoTrack);
-        });
-
-        // Replace in local preview
-        const localVideo = userVideo.current;
-        if (localVideo) {
-          const updatedStream = new MediaStream([
-            ...oldStream.getAudioTracks(),
-            newVideoTrack,
-          ]);
-          localVideo.srcObject = updatedStream;
-          streamRef.current = updatedStream;
-        }
-      } catch (err) {
-        console.error("Error turning on video:", err);
       }
+    };
+
+    peer.ontrack = (event) => {
+      setPeers((prev) =>
+        prev.map((p) =>
+          p.peerId === userId ? { ...p, stream: event.streams[0] } : p
+        )
+      );
+    };
+
+    peer
+      .createOffer()
+      .then((offer) => peer.setLocalDescription(offer))
+      .then(() => {
+        socket.emit("signal", {
+          to: userId,
+          from: socket.id,
+          signal: { sdp: peer.localDescription },
+        });
+      });
+
+    return peer;
+  };
+
+  function addPeer(fromId, stream) {
+    const peer = new RTCPeerConnection({ iceServers });
+    stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+
+    peer.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("signal", {
+          to: fromId,
+          from: socket.id,
+          signal: { candidate: event.candidate },
+        });
+      }
+    };
+    peer.ontrack = (event) => {
+      setPeers((prev) =>
+        prev.map((p) =>
+          p.peerId === fromId && !p.stream
+            ? { ...p, stream: event.streams[0] }
+            : p
+        )
+      );
+    };
+    return peer;
+  }
+
+  const toggleVideo = () => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (track) {
+      track.enabled = !track.enabled;
+      setVideoEnabled(track.enabled);
+      socket.emit("video-toggled", {
+        meetingId,
+        userId: socket.id,
+        isVideoEnabled: track.enabled,
+      });
+      setVideoRefreshKey((k) => k + 1);
     }
   };
 
   const toggleAudio = () => {
-    const audioTrack = streamRef.current?.getAudioTracks()[0];
-    if (audioTrack) {
-      audioTrack.enabled = !audioTrack.enabled;
-      setAudioEnabled(audioTrack.enabled);
+    const track = streamRef.current?.getAudioTracks()[0];
+    if (track) {
+      track.enabled = !track.enabled;
+      setAudioEnabled(track.enabled);
     }
   };
 
@@ -232,71 +275,50 @@ export default function MeetingPage() {
     });
   }, []);
   const toggleScreenShare = async () => {
-    if (!isScreenSharing) {
-      try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-        });
-        const screenTrack = screenStream.getVideoTracks()[0];
-
-        // Replace the video track for all peers
-        peersRef.current.forEach(({ peer }) => {
-          const sender = peer._pc
-            .getSenders()
-            .find((s) => s.track?.kind === "video");
-          if (sender) sender.replaceTrack(screenTrack);
-        });
-
-        // Show screen locally
-        if (userVideo.current) {
-          userVideo.current.srcObject = screenStream;
-        }
-        socket.emit("screen-share-started", {
-          username,
-          meetingId,
-        });
-
-        // When the user manually stops sharing screen
-        screenTrack.onended = () => {
-          stopScreenShare(); // Automatically restore camera
-        };
-
-        setIsScreenSharing(true);
-      } catch (err) {
-        console.error("Error sharing screen:", err);
-      }
+    if (isScreenSharing) {
+      stopScreenShare();
     } else {
-      stopScreenShare(); // If already sharing, stop and go back to camera
+      handleScreenShare();
     }
   };
 
-  const stopScreenShare = async () => {
+  const handleScreenShare = async () => {
     try {
-      const camStream = await navigator.mediaDevices.getUserMedia({
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
       });
+      const screenTrack = screenStream.getVideoTracks()[0];
 
-      const camTrack = camStream.getVideoTracks()[0];
-
-      // Replace screen video with camera video for all peers
-      peersRef.current.forEach(({ peer }) => {
-        const sender = peer._pc
-          .getSenders()
-          .find((s) => s.track?.kind === "video");
-        if (sender) sender.replaceTrack(camTrack);
+      Object.values(peerConnections.current).forEach((pc) => {
+        const sender = pc.getSenders().find((s) => s.track.kind === "video");
+        if (sender) sender.replaceTrack(screenTrack);
       });
 
-      // Restore local user's video
-      if (userVideo.current) {
-        userVideo.current.srcObject = camStream;
-      }
+      userVideo.current.srcObject = screenStream;
+      setIsScreenSharing(true);
 
-      setIsScreenSharing(false);
+      socket.emit("show-screen-share-popup", { username });
+
+      screenTrack.onended = () => {
+        stopScreenShare();
+      };
     } catch (err) {
-      console.error("Error restoring camera after screen share:", err);
+      console.error("Screen share error:", err);
     }
   };
 
+  const stopScreenShare = () => {
+    const webcamTrack = streamRef.current?.getVideoTracks()[0];
+    if (!webcamTrack) return;
+
+    Object.values(peerConnections.current).forEach((pc) => {
+      const sender = pc.getSenders().find((s) => s.track.kind === "video");
+      if (sender) sender.replaceTrack(webcamTrack);
+    });
+
+    userVideo.current.srcObject = streamRef.current;
+    setIsScreenSharing(false);
+  };
   return (
     <div className="video-wrapper">
       <h2 className="room-title">Room:{meetingId}</h2>
@@ -311,8 +333,8 @@ export default function MeetingPage() {
             chatOpen || participantOpen ? "centered" : ""
           }`}
         >
-          {peers.map(({ peerID, stream, username }) => (
-            <Video key={peerID} stream={stream} username={username} />
+          {peers.map(({ peerId, stream, username }) => (
+            <Video key={peerId} stream={stream} username={username} />
           ))}
 
           {chatOpen && (

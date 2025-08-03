@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { backendUrl } from "../utils/config";
+
 function Signup() {
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -17,7 +18,7 @@ function Signup() {
       userEmail: userEmail,
       userPassword: userPassword,
     });
-    // console.log(success);
+
     const success = response.data.success;
     const userData = response.data.userData;
     console.log(userData);
@@ -37,8 +38,8 @@ function Signup() {
   return (
     <div className="container">
       <div className="row mt-4">
-        <div className="col-4 ">
-          <h1 className="text-muted " style={{ fontSize: "50px" }}>
+        <div className="col-12 col-md-6">
+          <h1 className="text-muted" style={{ fontSize: "50px" }}>
             New here?
           </h1>
           <div>
@@ -47,50 +48,47 @@ function Signup() {
               Create your account and start your journey with confera.
             </h6>
           </div>
-          <form action="">
-            <div className="mt-4">
-              <label htmlFor="" className="form-label">
-                UserName
-              </label>
-              <input
-                type="text"
-                placeholder="Enter your UserName"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                className="form-control"
-              />
-            </div>
-            <div className="mt-2">
-              <label htmlFor="" className="form-label">
-                Email
-              </label>
-              <input
-                type="text"
-                placeholder="Enter your Email"
-                value={userEmail}
-                onChange={(e) => setUserEmail(e.target.value)}
-                className="form-control"
-              />
-            </div>
-            <div className="mt-2 mb-5">
-              <label htmlFor="" className="form-label">
-                Password
-              </label>
-              <input
-                type="password"
-                placeholder="Enter your password"
-                className="form-control"
-                value={userPassword}
-                onChange={(e) => setUserPassword(e.target.value)}
-              />
-            </div>
-            <button className="btn btn-primary fs-5" onClick={handleSubmit}>
-              SignUp
-            </button>
-          </form>
+
+          <div className="w-100 w-md-75 w-lg-75 mx-auto">
+            <form onSubmit={handleSubmit}>
+              <div className="mt-4">
+                <label className="form-label">UserName</label>
+                <input
+                  type="text"
+                  placeholder="Enter your UserName"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  className="form-control"
+                />
+              </div>
+              <div className="mt-2">
+                <label className="form-label">Email</label>
+                <input
+                  type="email"
+                  placeholder="Enter your Email"
+                  value={userEmail}
+                  onChange={(e) => setUserEmail(e.target.value)}
+                  className="form-control"
+                />
+              </div>
+              <div className="mt-2 mb-5">
+                <label className="form-label">Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter your password"
+                  className="form-control"
+                  value={userPassword}
+                  onChange={(e) => setUserPassword(e.target.value)}
+                />
+              </div>
+              <button className="btn btn-primary fs-5" type="submit">
+                SignUp
+              </button>
+            </form>
+          </div>
         </div>
-        <div className="col-2"></div>
-        <div className="col-6 mt-2">
+
+        <div className="col-12 col-md-6 mt-4 d-none d-md-block text-center">
           <img src="/images/singup1.svg" alt="Login" style={{ width: "75%" }} />
         </div>
       </div>

@@ -1,1 +1,1 @@
-export const  backendUrl = "https://confera-rlby.onrender.com"
+export const backendUrl = "http://localhost:3000";
