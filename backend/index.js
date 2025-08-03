@@ -4,30 +4,32 @@ const cors = require("cors");
 const app = express();
 const mongoose = require("mongoose");
 const authentication = require("./routes/authRoute.js");
-const userMeetings = require('./routes/userMeetingRoute.js');
+const userMeetings = require("./routes/userMeetingRoute.js");
 app.use(express.json());
-const port = 3000;
+const port = 3000 || process.env.PORT;
 const url = process.env.MONGO_URL;
 const http = require("http");
 const { Server } = require("socket.io");
 const server = http.createServer(app);
- const {handleSocket} = require('./controller/socketController.js');
-app.use(cors({
-  origin: "*",
-  methods:["GET","POST","PATCH","PUT","DELETE"],
-  credentials: true,
-}));
+const { handleSocket } = require("./controller/socketController.js");
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
-const io = new Server(server,{
-  cors:{
-    origin:"*",
-    methods:["GET","POST"],
-    credentials:true,
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+    credentials: true,
   },
-})
-let activeMeetings={};
+});
+let activeMeetings = {};
 app.use("/", authentication);
-app.use("/",userMeetings);
+app.use("/", userMeetings);
 
 app.get("/api/meeting-exists/:meetingId", (req, res) => {
   const { meetingId } = req.params;
@@ -35,10 +37,9 @@ app.get("/api/meeting-exists/:meetingId", (req, res) => {
   res.json({ exists });
 });
 
-
-io.on("connection",(socket)=>{
-    handleSocket(io,socket,activeMeetings);
-})
+io.on("connection", (socket) => {
+  handleSocket(io, socket, activeMeetings);
+});
 
 function db() {
   mongoose

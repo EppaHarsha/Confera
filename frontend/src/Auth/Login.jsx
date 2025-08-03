@@ -68,7 +68,10 @@ function Login() {
               />
             </div>
             <p className="mt-3">
-              If you don't have account go to <a href="/signup">Signup</a>
+              If you don't have account go to{" "}
+              <Link className="nav-link text-dark fs-5" to="/signup">
+                Signup
+              </Link>
             </p>
             <button
               className="btn btn-primary fs-5 mt-1"
