@@ -16,7 +16,14 @@ import { backendUrl } from "./utils/config";
 import SendIcon from "@mui/icons-material/Send";
 import { toast } from "react-toastify";
 const socket = io(backendUrl);
-const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+const iceServers = [
+  { urls: "stun:stun.l.google.com:19302" },
+  {
+    urls: "turn:openrelay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+];
 
 export default function MeetingPage() {
   const { state } = useLocation();
@@ -177,6 +184,7 @@ export default function MeetingPage() {
     };
 
     peer.ontrack = (event) => {
+      console.log("Received remote track for", userId, event.streams);
       setPeers((prev) =>
         prev.map((p) =>
           p.peerId === userId ? { ...p, stream: event.streams[0] } : p
