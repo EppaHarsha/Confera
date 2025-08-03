@@ -4,6 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
+import { backendUrl } from "../utils/config";
 function Home() {
   const [username, setusername] = useState("");
   const [meetingId, setMeetingId] = useState("");
@@ -28,7 +29,7 @@ function Home() {
 
     try {
       const response = await axios.get(
-        `http://localhost:3000/api/meeting-exists/${meetingId}`
+        `${backendUrl}/api/meeting-exists/${meetingId}`
       );
       console.log(response);
       if (response.data.exists) {
@@ -160,7 +161,7 @@ function Home() {
     // console.log(localStorage.getItem("username"));
     console.log(username);
     try {
-      await axios.post("http://localhost:3000/schedule", {
+      await axios.post(`${backendUrl}/schedule`, {
         username: localStorage.getItem("username"),
         meetingId: id,
         title: scheduledTitle,
