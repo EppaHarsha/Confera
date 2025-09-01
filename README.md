@@ -33,13 +33,13 @@ cd confera
 ### 2.cd backend
 npm install 
 
-Create .env in backend folder
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
-PORT=5000
+-Create .env in backend folder
+-MONGO_URI=your_mongodb_connection_string
+-JWT_SECRET=your_secret_key
+-PORT=5000
 
-###3. Frontend Setup
-npm install react react-dom react-router-dom axios @mui/material @mui/icons-material @emotion/react @emotion/styled react-toastify socket.io-client simple-peer uuid
-npm install --save-dev vite @vitejs/plugin-react eslint @eslint/js eslint-plugin-react-hooks eslint-plugin-react-refresh @types/react @types/react-dom globals
-Run Frontend
-npm run dev
+### 3. Frontend Setup
+-npm install react react-dom react-router-dom axios @mui/material @mui/icons-material @emotion/react @emotion/styled react-toastify socket.io-client simple-peer uuid
+-npm install --save-dev vite @vitejs/plugin-react eslint @eslint/js eslint-plugin-react-hooks eslint-plugin-react-refresh @types/react @types/react-dom globals
+-Run Frontend
+-npm run dev
